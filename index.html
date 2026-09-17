@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>KINETIC STUDIO — Two-Person Creative Technology Lab</title>
+
+  <!-- Google Fonts: Space Grotesk & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Space Grotesk"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            obsidian: '#000000',
+            cardBg: '#0A0A0E',
+            cobalt: '#0055FF',
+            acid: '#CCFF00',
+            subtle: '#71717A',
+            borderDark: 'rgba(255, 255, 255, 0.12)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Immediate Android Detection in Head -->
+  <script>
+    if (/Android/i.test(navigator.userAgent) || window.location.search.includes('android') || window.location.search.includes('scrub')) {
+      document.documentElement.classList.add('is-android');
+    }
+  </script>
+
+  <style>
+    html, body {
+      background-color: #000000;
+      color: #FFFFFF;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* On Android: Zoom in video to fit the whole screen edge-to-edge */
+    html.is-android #bg-canvas,
+    body.is-android #bg-canvas {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+      aspect-ratio: auto !important;
+      object-fit: cover !important;
+      object-position: center center !important;
+    }
+
+    /* Text readability over dynamic zoomed background */
+    .text-glow {
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95), 0 0 40px rgba(0, 0, 0, 0.85);
+    }
+
+    /* 3D Text Drum Beat Styling */
+    .text-drum-beat {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      will-change: transform, opacity;
+      pointer-events: none;
+    }
+
+    /* Dark Transparent Frosted Glass Card */
+    .glass-card {
+      background: rgba(10, 10, 14, 0.70);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 20px 40px -15px rgba(0, 0, 0, 0.9);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #000000;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272A;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #0055FF;
+    }
+  </style>
+</head>
+
+<body class="font-sans antialiased selection:bg-acid selection:text-black bg-black text-white">
+
+  <!-- Real-time Top Progress Bar -->
+  <div class="fixed top-0 inset-x-0 h-[2px] bg-zinc-900 z-50 pointer-events-none">
+    <div id="alchemy-bar" class="h-full bg-gradient-to-r from-cobalt via-blue-400 to-acid w-0 transition-all duration-75"></div>
+  </div>
+
+  <!-- Top Studio Bar with Option A Company Head -->
+  <header aria-label="Studio Dispatch" class="fixed top-[2px] inset-x-0 z-40 px-3 sm:px-6 py-2 border-b border-white/10 bg-black/85 backdrop-blur-xl font-mono text-[11px] text-zinc-400">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <!-- Brand & Studio Mascot Head (Option A) -->
+      <div class="flex items-center gap-2 sm:gap-3.5">
+        <a href="#studio-stage" class="flex items-center gap-2 sm:gap-2.5 group">
+          <div class="relative w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden border border-white/25 bg-zinc-950 p-0.5 shadow-[0_0_14px_rgba(204,255,0,0.3)] group-hover:border-acid group-hover:shadow-[0_0_20px_rgba(204,255,0,0.6)] transition-all flex-shrink-0">
+            <img src="assets/brand/company_head.jpg" alt="Kinetic Studio Head" class="w-full h-full object-cover rounded-md group-hover:scale-110 transition-transform duration-300" />
+          </div>
+          <div class="flex flex-col justify-center leading-none">
+            <div class="flex items-center gap-1.5">
+              <span class="font-sans font-extrabold text-white text-xs sm:text-sm tracking-tight group-hover:text-acid transition-colors">KINETIC</span>
+              <span class="font-mono text-[9px] sm:text-[10px] text-zinc-500 font-bold uppercase tracking-wider">STUDIO</span>
+            </div>
+            <span class="font-mono text-[8px] sm:text-[9px] text-zinc-400 tracking-wider mt-0.5 hidden sm:inline">TWO-PERSON DIGITAL LAB · EST. 2026</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN 3D PINNED STAGE (Sticky 100dvh Viewport with Direct Touch Gesture)     -->
+  <!-- ========================================================================= -->
+  <section id="studio-stage" class="relative h-[100dvh] w-full overflow-hidden bg-black select-none touch-none">
+    
+    <!-- Pinned 100vh Viewport Stage (Direct Gesture Container) -->
+    <div id="studio-viewport" class="relative h-[100dvh] w-full overflow-hidden flex items-center justify-center bg-black cursor-grab active:cursor-grabbing">
+      
+      <!-- 1. Background Canvas: Renders the 120-frame Liquid Chrome Animation -->
+      <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+        <canvas 
+          id="bg-canvas" 
+          width="960" 
+          height="540" 
+          class="w-full max-w-5xl aspect-video object-contain"
+        ></canvas>
+      </div>
+
+      <!-- Ambient Glow Accents -->
+      <div class="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-cobalt/15 rounded-full blur-[140px] pointer-events-none z-10"></div>
+      <div class="absolute bottom-10 right-10 w-[300px] h-[200px] bg-acid/10 rounded-full blur-[120px] pointer-events-none z-10"></div>
+
+      <!-- 2. 3D Pinned Text Drum Container (Left / Center) -->
+      <div class="relative w-full max-w-7xl mx-auto px-4 sm:px-6 h-full flex items-center z-20 pointer-events-none">
+        <div id="text-drum" class="relative w-full max-w-2xl h-80 sm:h-96 pointer-events-none pr-0">
+          
+          <!-- Beat 0: Frame 001 - 030 (The Vessel: Upright Borosilicate Flask) -->
+          <div class="text-drum-beat" style="transform: perspective(900px) translateY(0%) rotateX(0deg); opacity: 1; pointer-events: auto;">
+            <h1 class="text-4xl sm:text-6xl font-bold tracking-tighter leading-[0.95] text-white uppercase text-glow">
+              WE MAKE THE<br>
+              <span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-500">
+                INTERNET FEEL
+              </span><br>
+              DIFFERENT.
+            </h1>
+
+            <div class="mt-4 sm:mt-5 flex flex-wrap items-center gap-3 font-mono text-xs sm:text-sm font-bold">
+              <span class="text-white">CODE /</span>
+              <span class="text-cobalt">CREATE /</span>
+              <span class="text-white">SHIP /</span>
+              <span class="text-acid">AI</span>
+            </div>
+
+            <p class="mt-4 text-zinc-300 text-sm sm:text-base font-light max-w-md leading-relaxed text-glow">
+              Two senior technologists. Zero account managers. We craft high-fashion 3D web experiences, bespoke AI pipelines, and tactile digital artifacts.
+            </p>
+          </div>
+
+          <!-- Beat 1: Frame 031 - 065 (The Philosophy: 45° Beaker Tilt & Meniscus Surge) -->
+          <div class="text-drum-beat" style="transform: perspective(900px) translateY(100%) rotateX(-40deg); opacity: 0; pointer-events: none;">
+            <h2 class="text-3xl sm:text-5xl font-bold tracking-tight text-white leading-tight text-glow">
+              Templates are the<br>
+              <span class="text-cobalt">death of culture.</span>
+            </h2>
+
+            <div class="glass-card p-4 sm:p-5 rounded-2xl mt-4 max-w-md">
+              <p class="text-sm sm:text-lg font-normal leading-relaxed text-zinc-200">
+                “We operate as a <strong class="text-white font-semibold underline decoration-cobalt decoration-2">two-person laboratory</strong>. We write the shaders, design the type, train the models, and deploy to the edge.”
+              </p>
+              <div class="mt-3 font-mono text-[10px] sm:text-xs text-zinc-400 flex flex-wrap items-center gap-2">
+                <span>ZERO MIDDLEMEN</span>
+                <span>·</span>
+                <span>2-WEEK SPRINTS</span>
+                <span>·</span>
+                <span class="text-acid font-bold">100% BESPOKE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Beat 2: Frame 066 - 095 (The Metamorphosis: Chrome Cascades onto 3D Tools) -->
+          <div class="text-drum-beat" style="transform: perspective(900px) translateY(200%) rotateX(-80deg); opacity: 0; pointer-events: none;">
+            <h2 class="text-3xl sm:text-5xl font-bold tracking-tight text-white leading-tight text-glow">
+              Alchemy of<br>
+              <span class="text-acid">digital craft.</span>
+            </h2>
+
+            <!-- 3 Capability Pills -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4 max-w-md">
+              <div class="glass-card p-3 rounded-xl">
+                <div class="font-mono text-cobalt font-bold text-xs sm:text-sm">{ } 3D Systems</div>
+                <div class="text-[10px] sm:text-[11px] text-zinc-300 mt-1">Shaders & 120Hz physics.</div>
+              </div>
+              <div class="glass-card p-3 rounded-xl">
+                <div class="font-mono text-acid font-bold text-xs sm:text-sm">✦ AI Pipelines</div>
+                <div class="text-[10px] sm:text-[11px] text-zinc-300 mt-1">Diffusion & neural engines.</div>
+              </div>
+              <div class="glass-card p-3 rounded-xl">
+                <div class="font-mono text-white font-bold text-xs sm:text-sm">↗ Frontends</div>
+                <div class="text-[10px] sm:text-[11px] text-zinc-300 mt-1">Editorial taste & haptics.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Beat 3: Frame 096 - 120 (Mirror Chromed Tools: Initiate Commission) -->
+          <div class="text-drum-beat" style="transform: perspective(900px) translateY(300%) rotateX(-120deg); opacity: 0; pointer-events: none;">
+            <h2 class="text-3xl sm:text-5xl font-bold tracking-tighter text-white uppercase leading-none text-glow">
+              BUILD SOMETHING<br>
+              <span class="text-cobalt">DIFFERENT.</span>
+            </h2>
+
+            <p class="mt-3 text-zinc-300 text-xs sm:text-sm font-light max-w-md leading-relaxed text-glow">
+              The 3D instruments are fully electroplated in reflective mirror chrome. We take on only 2 client commissions per quarter.
+            </p>
+
+            <div class="mt-4 flex flex-wrap items-center gap-3 pointer-events-auto">
+              <button onclick="openModal()" class="px-5 py-3 rounded-lg bg-acid text-black font-mono font-bold text-xs uppercase tracking-wider hover:bg-lime-400 active:scale-95 transition-all shadow-lg shadow-acid/20">
+                SUBMIT COMMISSION BRIEF ↗
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Commission Modal Drawer -->
+  <div id="commission-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-2xl flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="glass-card max-w-lg w-full p-6 sm:p-8 rounded-3xl border border-white/20 relative shadow-2xl">
+      <button onclick="closeModal()" class="absolute top-4 right-4 text-zinc-400 hover:text-white font-mono text-sm px-2 py-1">✕ CLOSE</button>
+      
+      <div class="font-mono text-xs text-acid uppercase tracking-wider mb-2">[ INITIATE COMMISSION ]</div>
+      <h3 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">Build something different.</h3>
+      <p class="text-zinc-400 text-xs sm:text-sm font-light mb-6">We take on 2 client commissions per quarter. Tell us about your vision.</p>
+
+      <form onsubmit="handleInquiry(event)" class="space-y-4 font-mono text-xs">
+        <div>
+          <label class="block text-zinc-400 uppercase mb-1">Name / Company</label>
+          <input type="text" required placeholder="Alex // Founder" class="w-full px-4 py-3 rounded-lg bg-zinc-900/90 border border-white/15 text-white placeholder-zinc-500 focus:border-cobalt focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-zinc-400 uppercase mb-1">Email Address</label>
+          <input type="email" required placeholder="alex@brand.studio" class="w-full px-4 py-3 rounded-lg bg-zinc-900/90 border border-white/15 text-white placeholder-zinc-500 focus:border-cobalt focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-zinc-400 uppercase mb-1">Project Scope</label>
+          <select class="w-full px-4 py-3 rounded-lg bg-zinc-900/90 border border-white/15 text-white focus:border-cobalt focus:outline-none">
+            <option class="bg-black text-white">FULL-SCALE 3D WEBSITE & DIGITAL SYSTEM ($15k - $30k)</option>
+            <option class="bg-black text-white">HIGH-CONVERTING HERO & KINETIC LAUNCH ($8k - $15k)</option>
+            <option class="bg-black text-white">CUSTOM AI BRAND PIPELINE & INTERFACE LAB ($12k+)</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full py-3.5 rounded-lg bg-acid text-black font-bold text-xs uppercase tracking-wider hover:bg-lime-400 active:scale-95 transition-all shadow-lg shadow-acid/20">
+          SUBMIT COMMISSION BRIEF ↗
+        </button>
+      </form>
+
+      <div id="inquiry-success" class="hidden mt-4 p-3 rounded-lg bg-acid/20 border border-acid/50 text-acid font-mono text-xs text-center font-bold">
+        ✓ BRIEF RECEIVED. WE WILL RESPOND WITHIN 24 HOURS VIA TELEGRAM/EMAIL.
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT ENGINE -->
+  <script src="app.js?v=4"></script>
+</body>
+</html>
