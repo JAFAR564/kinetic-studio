@@ -103,6 +103,147 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #0055FF;
     }
+
+    /* =========================================================
+       3D CHROME LIVE MESSENGER BUBBLE STYLES
+       ========================================================= */
+    #messenger-widget {
+      perspective: 1200px;
+      transform-style: preserve-3d;
+    }
+
+    .chrome-bubble-orb {
+      position: relative;
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: 
+        radial-gradient(circle at 35% 26%, #ffffff 0%, #e2e8f0 14%, #94a3b8 28%, #334155 42%, #0b0f19 54%, #1e293b 66%, #cbd5e1 82%, #ffffff 94%, #64748b 100%);
+      box-shadow: 
+        inset -4px -6px 12px rgba(0, 0, 0, 0.9),
+        inset 4px 6px 10px rgba(255, 255, 255, 0.95),
+        inset 0 0 16px rgba(204, 255, 0, 0.4),
+        0 14px 30px -4px rgba(0, 0, 0, 0.9),
+        0 0 25px rgba(0, 85, 255, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-style: preserve-3d;
+      transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease;
+      overflow: hidden;
+      will-change: transform, border-radius;
+    }
+
+    @media (min-width: 640px) {
+      .chrome-bubble-orb {
+        width: 68px;
+        height: 68px;
+      }
+    }
+
+    .chrome-bubble-orb:hover {
+      box-shadow: 
+        inset -4px -6px 14px rgba(0, 0, 0, 0.9),
+        inset 4px 6px 12px rgba(255, 255, 255, 1),
+        inset 0 0 22px rgba(204, 255, 0, 0.65),
+        0 18px 38px -4px rgba(0, 0, 0, 0.95),
+        0 0 35px rgba(204, 255, 0, 0.55);
+    }
+
+    /* Specular dynamic light highlight */
+    .chrome-specular {
+      position: absolute;
+      top: 5px;
+      left: 8px;
+      width: 28px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.6) 45%, rgba(204, 255, 0, 0.3) 70%, transparent 90%);
+      transform: rotate(-25deg);
+      pointer-events: none;
+      filter: blur(0.5px);
+      will-change: transform;
+    }
+
+    /* Chromatic Iridescent Rim */
+    .chrome-caustic-layer {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(
+        from 210deg at 50% 50%,
+        rgba(0, 85, 255, 0.35) 0deg,
+        rgba(204, 255, 0, 0.45) 100deg,
+        rgba(255, 255, 255, 0.7) 180deg,
+        rgba(0, 85, 255, 0.35) 280deg,
+        rgba(204, 255, 0, 0.45) 360deg
+      );
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    /* Electroplated Horizon Line Reflection */
+    .chrome-horizon-reflection {
+      position: absolute;
+      inset: -15%;
+      border-radius: 50%;
+      background: linear-gradient(168deg, transparent 46%, rgba(5, 5, 8, 0.78) 48%, rgba(15, 20, 30, 0.88) 53%, transparent 56%);
+      pointer-events: none;
+    }
+
+    /* Organic Liquid Mercury / Bubble Surface Tension Wobble */
+    @keyframes bubbleSurfaceWobble {
+      0%, 100% {
+        border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%;
+      }
+      25% {
+        border-radius: 53% 47% 52% 48% / 48% 52% 48% 52%;
+      }
+      50% {
+        border-radius: 48% 52% 47% 53% / 52% 48% 52% 48%;
+      }
+      75% {
+        border-radius: 52% 48% 53% 47% / 47% 53% 48% 52%;
+      }
+    }
+
+    .bubble-wobble {
+      animation: bubbleSurfaceWobble 7s ease-in-out infinite;
+    }
+
+    /* Blown Bubble Particles */
+    .blown-bubble-particle {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.95) 0%, rgba(204,255,0,0.4) 30%, rgba(0,85,255,0.3) 65%, rgba(255,255,255,0.2) 100%);
+      box-shadow: inset 0 0 5px rgba(255,255,255,0.9), 0 2px 10px rgba(0,0,0,0.6), 0 0 10px rgba(204,255,0,0.3);
+      pointer-events: none;
+      will-change: transform, opacity;
+      animation: bubbleFloatAndPop 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    @keyframes bubbleFloatAndPop {
+      0% {
+        transform: translate3d(0, 0, 0) scale(0.2);
+        opacity: 0;
+      }
+      15% {
+        opacity: 0.95;
+        transform: translate3d(var(--tx-15, -10px), var(--ty-15, -20px), 0) scale(1);
+      }
+      75% {
+        opacity: 0.85;
+        transform: translate3d(var(--tx-75, -45px), var(--ty-75, -75px), 0) scale(0.95);
+      }
+      92% {
+        opacity: 0.9;
+        transform: translate3d(var(--tx-92, -55px), var(--ty-92, -90px), 0) scale(1.15);
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(var(--tx-end, -60px), var(--ty-end, -95px), 0) scale(1.35);
+      }
+    }
   </style>
 </head>
 
@@ -419,7 +560,134 @@
     </div>
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- 3D CHROME LIVE MESSENGER WIDGET & FLOATING DISPATCH CONSOLE               -->
+  <!-- ========================================================================= -->
+
+  <!-- Live Dispatch Drawer Console (Expands from Bottom-Right) -->
+  <aside aria-label="Live Dispatch Console" id="live-messenger-drawer" class="fixed bottom-24 right-4 sm:right-7 z-45 w-[calc(100vw-32px)] sm:w-96 max-w-sm glass-card border border-white/20 rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-2xl transition-all duration-300 transform opacity-0 pointer-events-none translate-y-4 scale-95 select-text">
+    <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="relative flex h-2.5 w-2.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-acid opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-acid"></span>
+        </span>
+        <div class="font-mono text-[10px] text-white font-bold tracking-wider">[ KINETIC // LIVE DISPATCH ]</div>
+      </div>
+      <button onclick="toggleLiveMessenger()" class="text-zinc-400 hover:text-white font-mono text-xs px-2 py-1 transition-colors">✕ CLOSE</button>
+    </div>
+
+    <div>
+      <h4 class="text-base sm:text-lg font-bold text-white tracking-tight leading-tight">Direct Founder Terminal</h4>
+      <p class="text-xs text-zinc-300 font-light mt-1 mb-4 leading-relaxed">
+        Bypass account executives. Connect directly with the two engineers architecting your 3D platform & AI engine.
+      </p>
+
+      <!-- Quick Dispatch Form -->
+      <form id="live-dispatch-form" onsubmit="handleLiveDispatch(event)" class="space-y-3 font-mono text-xs">
+        <div>
+          <label class="block text-zinc-400 uppercase text-[10px] mb-1">Your Direct Contact (Email or Telegram)</label>
+          <input type="text" id="dispatch-sender" required placeholder="@handle or alex@studio.co" class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-900/90 border border-white/15 text-white placeholder-zinc-500 focus:border-acid focus:outline-none text-xs" />
+        </div>
+        <div>
+          <label class="block text-zinc-400 uppercase text-[10px] mb-1">Message / Project Inquiry</label>
+          <textarea id="dispatch-message" required rows="2" placeholder="Tell us what you're building..." class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-900/90 border border-white/15 text-white placeholder-zinc-500 focus:border-acid focus:outline-none text-xs resize-none"></textarea>
+        </div>
+        <button type="submit" class="w-full py-3 rounded-lg bg-acid text-black font-bold text-xs uppercase tracking-wider hover:bg-lime-400 active:scale-95 transition-all shadow-md shadow-acid/20 flex items-center justify-center gap-2">
+          <span>TRANSMIT TO FOUNDERS</span>
+          <span>⚡</span>
+        </button>
+      </form>
+
+      <div id="dispatch-success-state" class="hidden mt-3 p-3 rounded-lg bg-acid/15 border border-acid/40 text-acid font-mono text-[11px] leading-relaxed text-center font-semibold">
+        ✓ DISPATCH TRANSMITTED.<br>
+        <span class="text-zinc-300 font-normal text-[10px]">Pushed directly to founder devices. Expect reply in &lt;15 min.</span>
+      </div>
+
+      <!-- Instant One-Tap Founder Lines -->
+      <div class="mt-4 pt-3 border-t border-white/10">
+        <div class="font-mono text-[9px] text-zinc-400 uppercase tracking-wider mb-2">Instant Encrypted Channels</div>
+        <div class="grid grid-cols-2 gap-2 font-mono text-[10px]">
+          <a href="https://t.me/kinetic_studio_lab" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cobalt text-zinc-200 transition-colors">
+            <svg class="w-3.5 h-3.5 fill-current text-cobalt" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .34z"/></svg>
+            <span>TELEGRAM</span>
+          </a>
+          <a href="mailto:founder@kinetic.studio?subject=Kinetic%20Lab%20Inquiry" class="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-acid text-zinc-200 transition-colors">
+            <span class="text-acid">✉</span>
+            <span>EMAIL</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 3D Chrome Floating Bubble Launcher (Anchored Near Right Corner) -->
+  <aside aria-label="Live Studio Messenger" id="messenger-widget" class="fixed bottom-5 right-5 sm:bottom-7 sm:right-7 z-45 pointer-events-auto select-none">
+    <!-- Blown Micro-Bubbles Particles Spawner -->
+    <div id="bubble-particles-container" class="absolute inset-0 pointer-events-none overflow-visible"></div>
+
+    <!-- Soft Contact Shadow Underneath (Dynamically scales with 3D float) -->
+    <div id="chrome-bubble-shadow" class="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-12 sm:w-14 h-3.5 bg-black/80 rounded-full blur-[6px] pointer-events-none transition-transform duration-75"></div>
+
+    <!-- 3D Pivot Wrapper (Rotates in 3D pitch/yaw/roll across all angles) -->
+    <button 
+      type="button"
+      id="chrome-bubble-3d" 
+      onclick="toggleLiveMessenger()" 
+      class="relative cursor-pointer group focus:outline-none transition-opacity duration-300"
+      style="transform-style: preserve-3d; will-change: transform; opacity: 0;"
+      aria-label="Open Live Messenger"
+    >
+      <!-- Chrome Sphere Orb Body with Organic Liquid Wobble -->
+      <div id="chrome-bubble-body" class="chrome-bubble-orb bubble-wobble">
+        
+        <!-- Horizon Line Mirror Reflection -->
+        <div class="chrome-horizon-reflection"></div>
+        
+        <!-- Chromatic Caustic / Iridescent Rim -->
+        <div class="chrome-caustic-layer"></div>
+
+        <!-- Specular Dynamic Light Highlight (Shifts opposite to 3D rotation) -->
+        <div id="chrome-specular" class="chrome-specular"></div>
+
+        <!-- Center 3D Messenger Glyph Icon -->
+        <div id="messenger-icon-wrap" class="relative z-10 transition-transform duration-300 group-hover:scale-110">
+          <!-- Chat Glyph with Audio/Kinetic Wave -->
+          <svg id="messenger-glyph-chat" viewBox="0 0 24 24" class="w-7 h-7 fill-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)]">
+            <path d="M12 2C6.477 2 2 6.141 2 11.25c0 2.913 1.464 5.518 3.75 7.152V22l3.418-1.875c.91.252 1.865.375 2.832.375 5.523 0 10-4.141 10-9.25S17.523 2 12 2z" 
+                  fill="url(#chrome-glyph-grad)" 
+                  stroke="rgba(255,255,255,0.7)" 
+                  stroke-width="0.8" />
+            <path d="M7.5 11.5h2.2l1.3-2.8 2 5.6 1.5-2.8h2" 
+                  stroke="#CCFF00" 
+                  stroke-width="1.8" 
+                  stroke-linecap="round" 
+                  stroke-linejoin="round" />
+            <defs>
+              <linearGradient id="chrome-glyph-grad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#334155"/>
+              </linearGradient>
+            </defs>
+          </svg>
+
+          <!-- Close Glyph (Hidden initially, shown when drawer is open) -->
+          <svg id="messenger-glyph-close" viewBox="0 0 24 24" class="w-6 h-6 fill-none stroke-white stroke-2 hidden drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)]">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Live Online Presence Pulse Indicator -->
+      <span id="messenger-live-pulse" class="absolute -top-1 -right-1 flex h-4 w-4 z-20 pointer-events-none">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-acid opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-4 w-4 bg-acid border-2 border-black shadow-[0_0_8px_rgba(204,255,0,0.9)]"></span>
+      </span>
+    </button>
+  </aside>
+
   <!-- JAVASCRIPT ENGINE -->
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
