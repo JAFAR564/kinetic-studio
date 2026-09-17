@@ -97,8 +97,8 @@ function triggerHapticTick(frameNum) {
 
 // 4. Sensitivity Calculation
 function getTravelDistance() {
-  // ~1.5x screen height to comfortably swipe through all 120 frames
-  return Math.max(750, window.innerHeight * 1.5);
+  // ~1.8x screen height for smooth pacing across all 5 narrative beats
+  return Math.max(900, window.innerHeight * 1.8);
 }
 
 // 5. Continuous render loop with inertia
@@ -150,7 +150,7 @@ function renderLoop() {
 // 6. Direct Gesture Handling (Entire Viewport)
 function onGestureStart(clientY, target) {
   // If user tapped a modal element or form input, let them interact normally
-  if (target && target.closest('#commission-modal')) return;
+  if (target && (target.closest('#commission-modal') || target.closest('#artifact-modal'))) return;
 
   isDragging = true;
   hasMoved = false;
@@ -224,8 +224,8 @@ window.addEventListener('touchcancel', () => {
 window.addEventListener('mousedown', (e) => {
   // Only left-click drags
   if (e.button !== 0) return;
-  // Don't intercept clicks inside the modal form
-  if (e.target.closest('#commission-modal')) return;
+  // Don't intercept clicks inside modals
+  if (e.target.closest('#commission-modal') || e.target.closest('#artifact-modal')) return;
   onGestureStart(e.clientY, e.target);
 });
 
@@ -240,7 +240,8 @@ window.addEventListener('mouseup', () => {
 
 // Trackpad / Mouse Wheel Support for Desktop
 window.addEventListener('wheel', (e) => {
-  if (document.getElementById('commission-modal')?.classList.contains('opacity-100')) return;
+  if (document.getElementById('commission-modal')?.classList.contains('opacity-100') ||
+      document.getElementById('artifact-modal')?.classList.contains('opacity-100')) return;
   momentumVel = 0;
   const normalizedDelta = e.deltaY * 0.00085;
   targetProgress = Math.min(1, Math.max(0, targetProgress + normalizedDelta));
@@ -257,6 +258,22 @@ function openModal() {
 
 function closeModal() {
   const modal = document.getElementById('commission-modal');
+  if (modal) {
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modal.classList.remove('opacity-100');
+  }
+}
+
+function openArtifactModal(artifactId) {
+  const modal = document.getElementById('artifact-modal');
+  if (modal) {
+    modal.classList.remove('pointer-events-none', 'opacity-0');
+    modal.classList.add('opacity-100');
+  }
+}
+
+function closeArtifactModal() {
+  const modal = document.getElementById('artifact-modal');
   if (modal) {
     modal.classList.add('opacity-0', 'pointer-events-none');
     modal.classList.remove('opacity-100');
