@@ -855,6 +855,368 @@ function closeArtifactModal() {
   }
 }
 
+// =========================================================================
+// ARTIFACTS REGISTRY & INTERACTIVE ROTARY ACTION WHEEL ENGINE
+// =========================================================================
+const ARTIFACTS_REGISTRY = {
+  remainder: {
+    id: 'remainder',
+    name: 'REMAINDER PORTAL',
+    shortName: 'REMAINDER',
+    badge: 'RPG OS',
+    category: 'SPATIAL OS // NEURAL CORE',
+    accentColor: '#CCFF00',
+    desc: 'Bespoke mobile spatial operating system featuring binaural 3D spatial audio nodes and an offline-first private neural core.',
+    stack: ['Flutter', 'Dart', 'Binaural 3D Audio', 'Local Neural LLM', 'Zero-Cloud Telemetry'],
+    arch: 'Decentralized local-first application architecture with procedural binaural audio shaders, SQLite vector storage, and sub-50ms offline inference.',
+    metrics: {
+      m1: { val: '4.8x', lbl: 'Session Depth' },
+      m2: { val: '60 FPS', lbl: 'Spatial Engine' },
+      m3: { val: '0 KB', lbl: 'Cloud Dep' }
+    },
+    latencyText: '<45ms INFERENCE LATENCY',
+    demoType: 'link',
+    demoUrl: 'https://github.com/JAFAR564/remainder-portal',
+    sourceUrl: 'https://github.com/JAFAR564/remainder-portal',
+    scope: '3d-flagship',
+    tier: 'tier-2'
+  },
+  kinetic01: {
+    id: 'kinetic01',
+    name: 'KINETIC // 01',
+    shortName: 'KINETIC',
+    badge: 'LIVE DSP',
+    category: 'CYBER-PHYSICAL HARDWARE TWIN',
+    accentColor: '#0055FF',
+    desc: 'Browser-native cyber-physical hardware twin with zero-latency Web Audio API DSP, 42mm knurled aluminum detents, and 120 FPS P31 phosphor CRT vector oscilloscope.',
+    stack: ['Web Audio API', 'Biquad Resonant Ladder', 'Waveshaper Saturation', 'Mechanical Detents', '120 FPS Canvas'],
+    arch: 'Zero-allocation audio graph featuring dual detuned oscillators, sub-oscillator, resonant lowpass ladder filter, parabolic saturation drive, and synchronized 1.5ms physical switch transients with micro-haptic feedback.',
+    metrics: {
+      m1: { val: '+94%', lbl: 'Pre-Orders' },
+      m2: { val: '120 FPS', lbl: 'Vector CRT' },
+      m3: { val: '<2.8ms', lbl: 'DSP Latency' }
+    },
+    latencyText: '<2.8ms DSP LATENCY',
+    demoType: 'internal',
+    demoUrl: null,
+    sourceUrl: 'https://github.com/JAFAR564/kinetic-studio',
+    scope: 'hardware-twin',
+    tier: 'tier-2'
+  },
+  copperhaven: {
+    id: 'copperhaven',
+    name: 'COPPER HAVEN',
+    shortName: 'COPPER',
+    badge: '3D WEBGL',
+    category: 'LUXURY COMMERCE // 3D FLAGSHIP',
+    accentColor: '#f59e0b',
+    desc: 'High-ticket 3D flagship commerce experience replacing conventional Shopify stores with physically based metallic lighting and zero-jank interactive 3D vaults.',
+    stack: ['Three.js', 'PBR Metal Shaders', 'Sub-100ms Edge CDN', 'GLTF Streaming', 'Direct Checkout'],
+    arch: 'Custom WebGL physically based lighting pipeline with multi-resolution progressive asset streaming under 1.2MB, maintaining consistent 60 FPS performance on mobile glass.',
+    metrics: {
+      m1: { val: '3.2x', lbl: 'Dwell Time' },
+      m2: { val: '+42%', lbl: 'Cart Lift' },
+      m3: { val: '<1.2MB', lbl: 'Asset Payload' }
+    },
+    latencyText: '<100ms CDN RESPONSE',
+    demoType: 'link',
+    demoUrl: 'https://github.com/JAFAR564/copper-haven',
+    sourceUrl: 'https://github.com/JAFAR564/copper-haven',
+    scope: '3d-flagship',
+    tier: 'tier-2'
+  },
+  neuralcore: {
+    id: 'neuralcore',
+    name: 'NEURAL CORE',
+    shortName: 'NEURAL',
+    badge: 'AI PIPELINE',
+    category: 'MULTI-MODAL // AUTONOMOUS AGENT',
+    accentColor: '#06b6d4',
+    desc: 'Client-side neural processing engine with WebGPU tensor acceleration, streaming token decoders, and private edge vision models.',
+    stack: ['WebGPU', 'ONNX Runtime Web', 'Local Vector Embeddings', 'Web Workers', 'Zero-Server Privacy'],
+    arch: 'Multi-threaded worker pipeline executing quantized neural networks directly on consumer GPU hardware via WebGPU shaders, eliminating recurring API costs.',
+    metrics: {
+      m1: { val: '<35ms', lbl: 'Token Stream' },
+      m2: { val: '100%', lbl: 'Private/Edge' },
+      m3: { val: '$0', lbl: 'API Costs' }
+    },
+    latencyText: '<35ms TOKEN TIME',
+    demoType: 'link',
+    demoUrl: 'https://github.com/JAFAR564/kinetic-studio',
+    sourceUrl: 'https://github.com/JAFAR564/kinetic-studio',
+    scope: 'ai-engine',
+    tier: 'tier-1'
+  }
+};
+
+let activeWheelArtifactId = null;
+let isWheelOpen = false;
+
+// Audio click synthesis for UI feedback
+function playWheelClickSound(freq = 1200, duration = 0.015) {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    if (!window._uiAudioCtx) {
+      window._uiAudioCtx = new AudioContextClass();
+    }
+    if (window._uiAudioCtx.state === 'suspended') {
+      window._uiAudioCtx.resume();
+    }
+    const ctx = window._uiAudioCtx;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {}
+}
+
+function openArtifactWheel(artifactId, event) {
+  if (event && event.stopPropagation) event.stopPropagation();
+  const artifact = ARTIFACTS_REGISTRY[artifactId];
+  if (!artifact) return;
+
+  activeWheelArtifactId = artifactId;
+  isWheelOpen = true;
+
+  // Sound & Haptics
+  playWheelClickSound(1800, 0.025);
+  if (navigator.vibrate) {
+    navigator.vibrate([10]);
+  }
+
+  // Populate Center Hub
+  const hubTitle = document.getElementById('wheel-hub-title');
+  const hubBadge = document.getElementById('wheel-hub-badge');
+  if (hubTitle) hubTitle.textContent = artifact.shortName;
+  if (hubBadge) {
+    hubBadge.textContent = `[ ${artifact.badge} ]`;
+    hubBadge.style.color = artifact.accentColor;
+  }
+
+  // Reset HUD Readout
+  resetWheelHUD();
+
+  // Show Modal with Wheel Animation
+  const wheelModal = document.getElementById('artifact-wheel-modal');
+  if (wheelModal) {
+    wheelModal.classList.add('wheel-active');
+  }
+
+  // Bind mouse/pointer reticle tracker
+  const disc = document.getElementById('action-wheel-disc');
+  if (disc) {
+    disc.removeEventListener('pointermove', handleWheelPointerMove);
+    disc.addEventListener('pointermove', handleWheelPointerMove);
+  }
+}
+
+function closeArtifactWheel() {
+  isWheelOpen = false;
+  const wheelModal = document.getElementById('artifact-wheel-modal');
+  if (wheelModal) {
+    wheelModal.classList.remove('wheel-active');
+  }
+
+  const disc = document.getElementById('action-wheel-disc');
+  if (disc) {
+    disc.removeEventListener('pointermove', handleWheelPointerMove);
+  }
+
+  playWheelClickSound(800, 0.015);
+}
+
+function handleWheelPointerMove(e) {
+  const disc = document.getElementById('action-wheel-disc');
+  const needle = document.getElementById('wheel-reticle-needle');
+  if (!disc || !needle) return;
+
+  const rect = disc.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const dx = e.clientX - centerX;
+  const dy = e.clientY - centerY;
+
+  const angleRad = Math.atan2(dy, dx);
+  const angleDeg = (angleRad * 180 / Math.PI) + 90; // Align with top needle
+  needle.style.transform = `rotate(${angleDeg}deg)`;
+}
+
+function updateWheelHUD(actionType) {
+  const artifact = ARTIFACTS_REGISTRY[activeWheelArtifactId];
+  const hud = document.getElementById('wheel-telemetry-hud');
+  if (!hud) return;
+
+  playWheelClickSound(2200, 0.008);
+
+  switch (actionType) {
+    case 'demo':
+      hud.textContent = artifact ? `[ LAUNCH DEMO ] // ACTIVATE ${artifact.shortName} ENGINE` : '[ LAUNCH DEMO ]';
+      hud.style.color = '#CCFF00';
+      break;
+    case 'info':
+      hud.textContent = `[ INFORMATION ] // ARCHITECTURE & BENCHMARK SPECS`;
+      hud.style.color = '#0055FF';
+      break;
+    case 'enquire':
+      hud.textContent = `[ ENQUIRE ] // COMMISSION TAILORED SYSTEM (${artifact ? artifact.name : ''})`;
+      hud.style.color = '#10b981';
+      break;
+    case 'source':
+      hud.textContent = `[ SOURCE CODE ] // INSPECT GITHUB REPOSITORY`;
+      hud.style.color = '#e2e8f0';
+      break;
+    default:
+      resetWheelHUD();
+  }
+}
+
+function resetWheelHUD() {
+  const hud = document.getElementById('wheel-telemetry-hud');
+  if (!hud) return;
+  const artifact = ARTIFACTS_REGISTRY[activeWheelArtifactId];
+  if (artifact) {
+    hud.textContent = `[ ${artifact.name} ] // SELECT AN OPTION OR DRAG WHEEL`;
+    hud.style.color = artifact.accentColor;
+  } else {
+    hud.textContent = `[ ROTARY HUB ] // SELECT AN OPTION OR DRAG WHEEL`;
+    hud.style.color = '#CCFF00';
+  }
+}
+
+function executeWheelAction(actionType) {
+  const artifact = ARTIFACTS_REGISTRY[activeWheelArtifactId];
+  if (!artifact) return;
+
+  playWheelClickSound(2600, 0.02);
+  if (navigator.vibrate) navigator.vibrate([15]);
+
+  closeArtifactWheel();
+
+  switch (actionType) {
+    case 'demo':
+      if (artifact.id === 'kinetic01') {
+        setTimeout(() => openArtifactModal('kinetic01'), 150);
+      } else if (artifact.demoUrl) {
+        window.open(artifact.demoUrl, '_blank');
+      }
+      break;
+    case 'info':
+      setTimeout(() => openArtifactInfoModal(artifact.id), 150);
+      break;
+    case 'enquire':
+      setTimeout(() => {
+        openModal();
+        const scopeSelect = document.getElementById('commission-scope-select');
+        const tierSelect = document.getElementById('commission-tier-select');
+        if (scopeSelect && artifact.scope) scopeSelect.value = artifact.scope;
+        if (tierSelect && artifact.tier) tierSelect.value = artifact.tier;
+      }, 150);
+      break;
+    case 'source':
+      if (artifact.sourceUrl) {
+        window.open(artifact.sourceUrl, '_blank');
+      }
+      break;
+  }
+}
+
+// Info Modal Controller
+let currentInfoArtifactId = null;
+
+function openArtifactInfoModal(artifactId) {
+  const artifact = ARTIFACTS_REGISTRY[artifactId];
+  if (!artifact) return;
+  currentInfoArtifactId = artifactId;
+
+  const modal = document.getElementById('artifact-info-modal');
+  const title = document.getElementById('info-modal-title');
+  const desc = document.getElementById('info-modal-desc');
+  const badge = document.getElementById('info-modal-badge');
+  const cat = document.getElementById('info-modal-category');
+  const latency = document.getElementById('info-modal-latency');
+  const stackContainer = document.getElementById('info-modal-stack');
+  const arch = document.getElementById('info-modal-arch');
+  const m1Val = document.getElementById('info-metric-1-val');
+  const m1Lbl = document.getElementById('info-metric-1-lbl');
+  const m2Val = document.getElementById('info-metric-2-val');
+  const m2Lbl = document.getElementById('info-metric-2-lbl');
+  const m3Val = document.getElementById('info-metric-3-val');
+  const m3Lbl = document.getElementById('info-metric-3-lbl');
+  const actionBtn = document.getElementById('info-modal-action-btn');
+
+  if (title) title.textContent = artifact.name;
+  if (desc) desc.textContent = artifact.desc;
+  if (badge) {
+    badge.textContent = `[ ${artifact.badge} ]`;
+    badge.style.color = artifact.accentColor;
+  }
+  if (cat) cat.textContent = artifact.category;
+  if (latency) latency.textContent = artifact.latencyText;
+  if (arch) arch.textContent = artifact.arch;
+
+  if (stackContainer) {
+    stackContainer.innerHTML = artifact.stack.map(tech => 
+      `<span class="px-2 py-0.5 rounded bg-white/10 text-zinc-200 border border-white/15 text-[10px] font-mono">${tech}</span>`
+    ).join('');
+  }
+
+  if (m1Val && artifact.metrics.m1) m1Val.textContent = artifact.metrics.m1.val;
+  if (m1Lbl && artifact.metrics.m1) m1Lbl.textContent = artifact.metrics.m1.lbl;
+  if (m2Val && artifact.metrics.m2) m2Val.textContent = artifact.metrics.m2.val;
+  if (m2Lbl && artifact.metrics.m2) m2Lbl.textContent = artifact.metrics.m2.lbl;
+  if (m3Val && artifact.metrics.m3) m3Val.textContent = artifact.metrics.m3.val;
+  if (m3Lbl && artifact.metrics.m3) m3Lbl.textContent = artifact.metrics.m3.lbl;
+
+  if (actionBtn) {
+    if (artifact.id === 'kinetic01') {
+      actionBtn.textContent = 'PLAY HARDWARE SYNTH ↗';
+    } else {
+      actionBtn.textContent = 'EXPLORE REPOSITORY ↗';
+    }
+  }
+
+  if (modal) {
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modal.classList.add('opacity-100');
+  }
+}
+
+function closeArtifactInfoModal() {
+  const modal = document.getElementById('artifact-info-modal');
+  if (modal) {
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modal.classList.remove('opacity-100');
+  }
+}
+
+function executeInfoModalAction() {
+  const artifact = ARTIFACTS_REGISTRY[currentInfoArtifactId];
+  if (!artifact) return;
+
+  closeArtifactInfoModal();
+
+  if (artifact.id === 'kinetic01') {
+    setTimeout(() => openArtifactModal('kinetic01'), 150);
+  } else if (artifact.demoUrl) {
+    window.open(artifact.demoUrl, '_blank');
+  }
+}
+
+// Global escape key listener to close wheel and modals
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (isWheelOpen) closeArtifactWheel();
+    closeArtifactInfoModal();
+  }
+});
+
 // Inquiry Form Handler
 function handleInquiry(e) {
   e.preventDefault();
