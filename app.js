@@ -268,11 +268,579 @@ function closeModal() {
   }
 }
 
+// =========================================================================
+// KINETIC // 01 CYBER-PHYSICAL HARDWARE SYNTHESIZER ENGINE
+// =========================================================================
+
+class KineticHardwareSynth {
+  constructor() {
+    this.ctx = null;
+    this.isPowered = false;
+    this.osc1 = null;
+    this.osc2 = null;
+    this.subOsc = null;
+    this.filter = null;
+    this.driveNode = null;
+    this.masterGain = null;
+    this.analyser = null;
+    this.dataArray = null;
+
+    // Acoustic parameters
+    this.cutoffFreq = 2400; // 20Hz - 18000Hz
+    this.resonance = 7.5;   // Q factor
+    this.waveform = 'sawtooth';
+    this.driveMode = 'warm'; // 'clean', 'warm', 'overdrive'
+    
+    // Audition sequencer state
+    this.isAuditioning = false;
+    this.stepIndex = 0;
+    this.arpInterval = null;
+    this.bassPattern = [55, 55, 110, 55, 73.4, 55, 82.4, 65.4, 55, 55, 110, 98, 55, 82.4, 73.4, 65.4]; // Notes in Hz
+    
+    // Dial physics state
+    this.dialAngle = 180; // 0 - 360 deg
+    this.currentDetent = 12; // 0 to 23
+  }
+
+  ensureContext() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioCtx();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  togglePower(forceOn) {
+    this.ensureContext();
+    if (forceOn !== undefined) {
+      this.isPowered = forceOn;
+    } else {
+      this.isPowered = !this.isPowered;
+    }
+
+    const toggle = document.getElementById('synth-power-toggle');
+    const led = document.getElementById('crt-status-led');
+    const overlay = document.getElementById('crt-standby-overlay');
+    const readout = document.getElementById('crt-freq-readout');
+
+    if (this.isPowered) {
+      if (toggle) toggle.classList.add('analog-toggle-active');
+      if (led) {
+        led.classList.remove('bg-zinc-600');
+        led.classList.add('bg-acid', 'shadow-[0_0_8px_#CCFF00]');
+      }
+      if (overlay) overlay.classList.add('opacity-0', 'pointer-events-none');
+      if (readout) readout.innerText = `${Math.round(this.cutoffFreq).toLocaleString()} Hz · CUTOFF ACTIVE`;
+      
+      this.playIgnitionHum();
+      this.startSynthGraph();
+      this.startAudition();
+    } else {
+      if (toggle) toggle.classList.remove('analog-toggle-active');
+      if (led) {
+        led.classList.remove('bg-acid', 'shadow-[0_0_8px_#CCFF00]');
+        led.classList.add('bg-zinc-600');
+      }
+      if (overlay) overlay.classList.remove('opacity-0', 'pointer-events-none');
+      if (readout) readout.innerText = `STANDBY // CLICK POWER`;
+      
+      this.stopAudition();
+      this.stopSynthGraph();
+    }
+  }
+
+  createDistortionCurve(amount) {
+    const k = typeof amount === 'number' ? amount : 50;
+    const n_samples = 44100;
+    const curve = new Float32Array(n_samples);
+    const deg = Math.PI / 180;
+    for (let i = 0; i < n_samples; ++i) {
+      const x = (i * 2) / n_samples - 1;
+      curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+    }
+    return curve;
+  }
+
+  startSynthGraph() {
+    if (!this.ctx || this.masterGain) return;
+    const now = this.ctx.currentTime;
+
+    // 1. Analyser Node for CRT Screen
+    this.analyser = this.ctx.createAnalyser();
+    this.analyser.fftSize = 256;
+    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+
+    // 2. Master Gain
+    this.masterGain = this.ctx.createGain();
+    this.masterGain.gain.setValueAtTime(0, now);
+    this.masterGain.connect(this.analyser);
+    this.analyser.connect(this.ctx.destination);
+
+    // 3. Nonlinear Waveshaper (Drive)
+    this.driveNode = this.ctx.createWaveShaper();
+    this.updateDriveCurve();
+
+    // 4. Resonant 24dB Ladder Lowpass Filter
+    this.filter = this.ctx.createBiquadFilter();
+    this.filter.type = 'lowpass';
+    this.filter.frequency.setValueAtTime(this.cutoffFreq, now);
+    this.filter.Q.setValueAtTime(this.resonance, now);
+
+    this.filter.connect(this.driveNode);
+    this.driveNode.connect(this.masterGain);
+
+    // 5. Dual Oscillators + Sub
+    this.osc1 = this.ctx.createOscillator();
+    this.osc2 = this.ctx.createOscillator();
+    this.subOsc = this.ctx.createOscillator();
+
+    this.osc1.type = this.waveform === 'fm' ? 'sawtooth' : this.waveform;
+    this.osc2.type = 'sawtooth';
+    this.subOsc.type = 'square';
+
+    this.osc1.frequency.setValueAtTime(55, now);
+    this.osc2.frequency.setValueAtTime(55.22, now); // Warm analog chorusing detune
+    this.subOsc.frequency.setValueAtTime(27.5, now); // Sub-bass
+
+    const osc1Gain = this.ctx.createGain();
+    const osc2Gain = this.ctx.createGain();
+    const subGain = this.ctx.createGain();
+
+    osc1Gain.gain.setValueAtTime(0.45, now);
+    osc2Gain.gain.setValueAtTime(0.35, now);
+    subGain.gain.setValueAtTime(0.3, now);
+
+    this.osc1.connect(osc1Gain);
+    this.osc2.connect(osc2Gain);
+    this.subOsc.connect(subGain);
+
+    osc1Gain.connect(this.filter);
+    osc2Gain.connect(this.filter);
+    subGain.connect(this.filter);
+
+    this.osc1.start(now);
+    this.osc2.start(now);
+    this.subOsc.start(now);
+  }
+
+  stopSynthGraph() {
+    if (!this.masterGain || !this.ctx) return;
+    try {
+      this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
+      if (this.osc1) this.osc1.stop();
+      if (this.osc2) this.osc2.stop();
+      if (this.subOsc) this.subOsc.stop();
+    } catch(e) {}
+    this.masterGain = null;
+    this.filter = null;
+  }
+
+  playIgnitionHum() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const humOsc = this.ctx.createOscillator();
+    const humGain = this.ctx.createGain();
+
+    humOsc.type = 'sawtooth';
+    humOsc.frequency.setValueAtTime(60, now);
+    humOsc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+
+    humGain.gain.setValueAtTime(0.3, now);
+    humGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+    humOsc.connect(humGain);
+    humGain.connect(this.ctx.destination);
+
+    humOsc.start(now);
+    humOsc.stop(now + 0.2);
+
+    if (navigator.vibrate) {
+      navigator.vibrate([15, 30, 20]);
+    }
+  }
+
+  // Discrete 1.5ms Acoustic Transient on Mechanical Detent Crossing
+  triggerDetentClick() {
+    if (!this.ctx || !this.isPowered) return;
+    try {
+      const now = this.ctx.currentTime;
+      const clickOsc = this.ctx.createOscillator();
+      const clickGain = this.ctx.createGain();
+      const clickFilter = this.ctx.createBiquadFilter();
+
+      clickFilter.type = 'highpass';
+      clickFilter.frequency.setValueAtTime(3400, now);
+
+      clickOsc.type = 'triangle';
+      clickOsc.frequency.setValueAtTime(900, now);
+      clickOsc.frequency.exponentialRampToValueAtTime(140, now + 0.003);
+
+      clickGain.gain.setValueAtTime(0.4, now);
+      clickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.003);
+
+      clickOsc.connect(clickFilter);
+      clickFilter.connect(clickGain);
+      clickGain.connect(this.ctx.destination);
+
+      clickOsc.start(now);
+      clickOsc.stop(now + 0.004);
+
+      if (navigator.vibrate) {
+        navigator.vibrate([8]);
+      }
+    } catch(e) {}
+  }
+
+  updateCutoff(angle) {
+    // 0 deg -> 20 Hz, 360 deg -> 18000 Hz (exponential scale)
+    this.dialAngle = Math.max(0, Math.min(360, angle));
+    const normalized = this.dialAngle / 360;
+    this.cutoffFreq = 20 * Math.pow(18000 / 20, normalized);
+
+    if (this.filter && this.ctx) {
+      this.filter.frequency.setTargetAtTime(this.cutoffFreq, this.ctx.currentTime, 0.015);
+    }
+
+    // Check 24 detent boundaries across 360 deg (15 deg per notch)
+    const newDetent = Math.round(this.dialAngle / 15);
+    if (newDetent !== this.currentDetent) {
+      this.currentDetent = newDetent;
+      this.triggerDetentClick();
+    }
+
+    // Update UI labels
+    const readout = document.getElementById('dial-detent-readout');
+    const freqReadout = document.getElementById('crt-freq-readout');
+    if (readout) {
+      readout.innerText = `${Math.round(this.cutoffFreq).toLocaleString()} Hz · DETENT ${this.currentDetent}/24`;
+    }
+    if (freqReadout && this.isPowered) {
+      freqReadout.innerText = `${Math.round(this.cutoffFreq).toLocaleString()} Hz · CUTOFF ACTIVE`;
+    }
+
+    // Rotate dial face
+    const dial = document.getElementById('synth-knurled-dial');
+    if (dial) {
+      dial.style.transform = `rotate(${this.dialAngle}deg)`;
+    }
+  }
+
+  updateDriveCurve() {
+    if (!this.driveNode) return;
+    if (this.driveMode === 'clean') {
+      this.driveNode.curve = null;
+    } else if (this.driveMode === 'warm') {
+      this.driveNode.curve = this.createDistortionCurve(20);
+    } else if (this.driveMode === 'overdrive') {
+      this.driveNode.curve = this.createDistortionCurve(120);
+    }
+  }
+
+  setWaveform(type) {
+    this.waveform = type;
+    if (this.osc1) {
+      this.osc1.type = type === 'fm' ? 'sawtooth' : type;
+    }
+    ['saw', 'square', 'sine', 'fm'].forEach((w) => {
+      const btn = document.getElementById(`wave-${w}`);
+      if (btn) {
+        if (w === type || (w === 'square' && type === 'square') || (w === 'saw' && type === 'sawtooth')) {
+          btn.className = 'py-1 rounded bg-acid text-black text-[9px] font-bold transition-all';
+        } else {
+          btn.className = 'py-1 rounded bg-white/10 text-zinc-300 hover:text-white text-[9px] font-bold transition-all';
+        }
+      }
+    });
+    this.triggerDetentClick();
+  }
+
+  setDrive(mode) {
+    this.driveMode = mode;
+    this.updateDriveCurve();
+    ['clean', 'warm', 'overdrive'].forEach((d) => {
+      const btn = document.getElementById(`drive-${d}`);
+      if (btn) {
+        if (d === mode) {
+          btn.className = 'py-1 rounded bg-acid text-black text-[9px] font-bold transition-all';
+        } else {
+          btn.className = 'py-1 rounded bg-white/10 text-zinc-300 hover:text-white text-[9px] font-bold transition-all';
+        }
+      }
+    });
+    this.triggerDetentClick();
+  }
+
+  loadPreset(name) {
+    if (!this.isPowered) {
+      this.togglePower(true);
+    }
+
+    if (name === 'acid') {
+      this.setWaveform('sawtooth');
+      this.setDrive('warm');
+      this.resonance = 14;
+      this.updateCutoff(135); // ~1,200 Hz
+    } else if (name === 'lead') {
+      this.setWaveform('square');
+      this.setDrive('overdrive');
+      this.resonance = 6;
+      this.updateCutoff(255); // ~6,800 Hz
+    } else if (name === 'sizzle') {
+      this.setWaveform('fm');
+      this.setDrive('clean');
+      this.resonance = 10;
+      this.updateCutoff(315); // ~12,400 Hz
+    }
+
+    if (this.filter && this.ctx) {
+      this.filter.Q.setValueAtTime(this.resonance, this.ctx.currentTime);
+    }
+
+    ['acid', 'lead', 'sizzle'].forEach((p) => {
+      const btn = document.getElementById(`preset-${p}-btn`);
+      if (btn) {
+        if (p === name) {
+          btn.className = 'px-2.5 py-1 rounded bg-acid text-black font-bold text-[9px] transition-all';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-zinc-200 font-bold text-[9px] transition-all';
+        }
+      }
+    });
+
+    this.triggerDetentClick();
+  }
+
+  toggleAudition() {
+    if (!this.isPowered) {
+      this.togglePower(true);
+      return;
+    }
+    if (this.isAuditioning) {
+      this.stopAudition();
+    } else {
+      this.startAudition();
+    }
+  }
+
+  startAudition() {
+    if (!this.isPowered || this.isAuditioning) return;
+    this.isAuditioning = true;
+    const btn = document.getElementById('synth-audition-btn');
+    const icon = document.getElementById('audition-icon');
+    const label = document.getElementById('audition-label');
+    if (btn) btn.className = 'mt-3 w-full py-2 rounded-lg bg-acid text-black font-mono text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-acid/20';
+    if (icon) icon.innerText = '⏸';
+    if (label) label.innerText = 'PAUSE AUDITION';
+
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(0.28, this.ctx.currentTime);
+    }
+
+    this.stepIndex = 0;
+    this.arpInterval = setInterval(() => {
+      if (!this.isAuditioning || !this.ctx || !this.osc1) return;
+      const noteHz = this.bassPattern[this.stepIndex % this.bassPattern.length];
+      const now = this.ctx.currentTime;
+      this.osc1.frequency.setValueAtTime(noteHz, now);
+      this.osc2.frequency.setValueAtTime(noteHz * 1.004, now);
+      this.subOsc.frequency.setValueAtTime(noteHz / 2, now);
+
+      // Micro filter envelope pluck on each step
+      if (this.filter) {
+        const peakCutoff = Math.min(18000, this.cutoffFreq * 1.6);
+        this.filter.frequency.setValueAtTime(peakCutoff, now);
+        this.filter.frequency.exponentialRampToValueAtTime(this.cutoffFreq, now + 0.12);
+      }
+
+      this.stepIndex++;
+    }, 135); // ~111 BPM 16th notes
+  }
+
+  stopAudition() {
+    this.isAuditioning = false;
+    clearInterval(this.arpInterval);
+    this.arpInterval = null;
+
+    const btn = document.getElementById('synth-audition-btn');
+    const icon = document.getElementById('audition-icon');
+    const label = document.getElementById('audition-label');
+    if (btn) btn.className = 'mt-3 w-full py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-white font-mono text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all';
+    if (icon) icon.innerText = '▶';
+    if (label) label.innerText = 'AUDITION SYNTH BASS';
+
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05);
+    }
+  }
+}
+
+// Global Synth & Oscilloscope Handlers
+let kineticSynth = null;
+let crtAnimFrame = null;
+let isDialInitialized = false;
+
+function initKnurledDial() {
+  if (isDialInitialized) return;
+  const container = document.getElementById('knurled-cutoff-container');
+  if (!container) return;
+  isDialInitialized = true;
+
+  let isDragging = false;
+  let startAngle = 0;
+  let startDialAngle = 0;
+
+  function getPointerAngle(e) {
+    const rect = container.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const rad = Math.atan2(clientY - cy, clientX - cx);
+    let deg = rad * (180 / Math.PI) + 90;
+    if (deg < 0) deg += 360;
+    return deg;
+  }
+
+  function onStart(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    isDragging = true;
+    startAngle = getPointerAngle(e);
+    startDialAngle = kineticSynth ? kineticSynth.dialAngle : 180;
+  }
+
+  function onMove(e) {
+    if (!isDragging) return;
+    if (e.cancelable) e.preventDefault();
+    const currentAngle = getPointerAngle(e);
+    let delta = currentAngle - startAngle;
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+
+    let targetDialAngle = startDialAngle + delta;
+    while (targetDialAngle < 0) targetDialAngle += 360;
+    while (targetDialAngle > 360) targetDialAngle -= 360;
+
+    if (kineticSynth) {
+      kineticSynth.updateCutoff(targetDialAngle);
+    }
+  }
+
+  function onEnd() {
+    isDragging = false;
+  }
+
+  container.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onEnd);
+
+  container.addEventListener('touchstart', onStart, { passive: false });
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('touchend', onEnd);
+}
+
+function startCRTOscilloscope() {
+  const canvas = document.getElementById('crt-oscilloscope');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+
+  function renderCRT() {
+    // 1. Phosphor Persistence Decay
+    ctx.fillStyle = 'rgba(4, 9, 4, 0.24)';
+    ctx.fillRect(0, 0, width, height);
+
+    if (kineticSynth && kineticSynth.isPowered && kineticSynth.analyser && kineticSynth.dataArray) {
+      kineticSynth.analyser.getByteTimeDomainData(kineticSynth.dataArray);
+
+      ctx.lineWidth = 2.2;
+      ctx.strokeStyle = '#39FF14';
+      ctx.shadowColor = '#CCFF00';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+
+      const sliceWidth = width / kineticSynth.dataArray.length;
+      let x = 0;
+
+      for (let i = 0; i < kineticSynth.dataArray.length; i++) {
+        const v = kineticSynth.dataArray[i] / 128.0; // 0.0 to 2.0
+        const y = (v * height) / 2;
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+        x += sliceWidth;
+      }
+
+      ctx.stroke();
+    } else {
+      // Idle Phosphor Beam Scanline
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(57, 255, 20, 0.25)';
+      ctx.shadowColor = '#39FF14';
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      const midY = height / 2;
+      ctx.moveTo(0, midY);
+      ctx.lineTo(width, midY);
+      ctx.stroke();
+    }
+
+    crtAnimFrame = requestAnimationFrame(renderCRT);
+  }
+
+  if (crtAnimFrame) cancelAnimationFrame(crtAnimFrame);
+  crtAnimFrame = requestAnimationFrame(renderCRT);
+}
+
+// Controller Wrapper Handlers
+function toggleSynthPower(forceOn) {
+  if (!kineticSynth) kineticSynth = new KineticHardwareSynth();
+  kineticSynth.togglePower(forceOn);
+}
+
+function setSynthWave(type) {
+  if (!kineticSynth) kineticSynth = new KineticHardwareSynth();
+  kineticSynth.setWaveform(type);
+}
+
+function setSynthDrive(mode) {
+  if (!kineticSynth) kineticSynth = new KineticHardwareSynth();
+  kineticSynth.setDrive(mode);
+}
+
+function loadSynthPreset(name) {
+  if (!kineticSynth) kineticSynth = new KineticHardwareSynth();
+  kineticSynth.loadPreset(name);
+}
+
+function toggleSynthAudition() {
+  if (!kineticSynth) kineticSynth = new KineticHardwareSynth();
+  kineticSynth.toggleAudition();
+}
+
+function preselectHardwareTier() {
+  const scope = document.getElementById('commission-scope-select');
+  const tier = document.getElementById('commission-tier-select');
+  if (scope) scope.value = 'hardware-twin';
+  if (tier) tier.value = 'tier-2';
+}
+
 function openArtifactModal(artifactId) {
   const modal = document.getElementById('artifact-modal');
   if (modal) {
     modal.classList.remove('pointer-events-none', 'opacity-0');
     modal.classList.add('opacity-100');
+    if (!kineticSynth) {
+      kineticSynth = new KineticHardwareSynth();
+    }
+    initKnurledDial();
+    startCRTOscilloscope();
   }
 }
 
@@ -281,6 +849,9 @@ function closeArtifactModal() {
   if (modal) {
     modal.classList.add('opacity-0', 'pointer-events-none');
     modal.classList.remove('opacity-100');
+    if (kineticSynth && kineticSynth.isAuditioning) {
+      kineticSynth.stopAudition();
+    }
   }
 }
 
