@@ -76,7 +76,8 @@ function updateTextDrum(progress) {
     const rotateX = -(offset * 40);
     beat.style.transform = `perspective(900px) translateY(${translateY}%) rotateX(${rotateX}deg)`;
     beat.style.opacity = Math.max(0, 1 - Math.abs(offset) * 1.5);
-    beat.style.pointerEvents = Math.abs(offset) < 0.35 ? 'auto' : 'none';
+    // Expand threshold so interactive buttons stay clickable throughout the beat's visibility
+    beat.style.pointerEvents = Math.abs(offset) < 0.65 ? 'auto' : 'none';
   });
 }
 
@@ -152,8 +153,20 @@ function renderLoop(time) {
 
 // 6. Direct Gesture Handling (Entire Viewport)
 function onGestureStart(clientY, target) {
-  // If user tapped a modal element or form input, let them interact normally
-  if (target && (target.closest('#commission-modal') || target.closest('#artifact-modal') || target.closest('#messenger-widget') || target.closest('#live-messenger-drawer'))) return;
+  // If user tapped a modal, wheel, info drawer, app icon button, or messenger widget, do not initiate stage drag
+  if (target && (
+    target.closest('#commission-modal') ||
+    target.closest('#artifact-modal') ||
+    target.closest('#artifact-wheel-modal') ||
+    target.closest('#artifact-info-modal') ||
+    target.closest('#messenger-widget') ||
+    target.closest('#live-messenger-drawer') ||
+    target.closest('.app-icon-btn') ||
+    target.closest('[data-artifact-id]') ||
+    target.closest('.app-icon-squircle')
+  )) {
+    return;
+  }
 
   isDragging = true;
   hasMoved = false;
@@ -227,8 +240,16 @@ window.addEventListener('touchcancel', () => {
 window.addEventListener('mousedown', (e) => {
   // Only left-click drags
   if (e.button !== 0) return;
-  // Don't intercept clicks inside modals or messenger widget
-  if (e.target.closest('#commission-modal') || e.target.closest('#artifact-modal') || e.target.closest('#messenger-widget') || e.target.closest('#live-messenger-drawer')) return;
+  // Don't intercept clicks inside modals, wheel, or app icons
+  if (e.target.closest('#commission-modal') ||
+      e.target.closest('#artifact-modal') ||
+      e.target.closest('#artifact-wheel-modal') ||
+      e.target.closest('#artifact-info-modal') ||
+      e.target.closest('#messenger-widget') ||
+      e.target.closest('#live-messenger-drawer') ||
+      e.target.closest('.app-icon-btn') ||
+      e.target.closest('[data-artifact-id]') ||
+      e.target.closest('.app-icon-squircle')) return;
   onGestureStart(e.clientY, e.target);
 });
 
@@ -245,6 +266,9 @@ window.addEventListener('mouseup', () => {
 window.addEventListener('wheel', (e) => {
   if (document.getElementById('commission-modal')?.classList.contains('opacity-100') ||
       document.getElementById('artifact-modal')?.classList.contains('opacity-100') ||
+      document.getElementById('artifact-wheel-modal')?.classList.contains('wheel-active') ||
+      document.getElementById('artifact-wheel-modal')?.classList.contains('opacity-100') ||
+      document.getElementById('artifact-info-modal')?.classList.contains('opacity-100') ||
       document.getElementById('live-messenger-drawer')?.classList.contains('opacity-100')) return;
   momentumVel = 0;
   const normalizedDelta = e.deltaY * 0.00085;
@@ -978,9 +1002,15 @@ function playWheelClickSound(freq = 1200, duration = 0.015) {
 }
 
 function openArtifactWheel(artifactId, event) {
-  if (event && event.stopPropagation) event.stopPropagation();
+  if (event) {
+    if (event.stopPropagation) event.stopPropagation();
+    if (event.preventDefault) event.preventDefault();
+  }
   const artifact = ARTIFACTS_REGISTRY[artifactId];
-  if (!artifact) return;
+  if (!artifact) {
+    console.error('Artifact not found:', artifactId);
+    return;
+  }
 
   activeWheelArtifactId = artifactId;
   isWheelOpen = true;
@@ -1006,7 +1036,8 @@ function openArtifactWheel(artifactId, event) {
   // Show Modal with Wheel Animation
   const wheelModal = document.getElementById('artifact-wheel-modal');
   if (wheelModal) {
-    wheelModal.classList.add('wheel-active');
+    wheelModal.classList.remove('opacity-0', 'pointer-events-none');
+    wheelModal.classList.add('opacity-100', 'wheel-active');
   }
 
   // Bind mouse/pointer reticle tracker
@@ -1021,7 +1052,8 @@ function closeArtifactWheel() {
   isWheelOpen = false;
   const wheelModal = document.getElementById('artifact-wheel-modal');
   if (wheelModal) {
-    wheelModal.classList.remove('wheel-active');
+    wheelModal.classList.add('opacity-0', 'pointer-events-none');
+    wheelModal.classList.remove('opacity-100', 'wheel-active');
   }
 
   const disc = document.getElementById('action-wheel-disc');
@@ -1416,12 +1448,45 @@ window.addEventListener('click', (e) => {
   }
 });
 
+// Bind direct tap/click handlers for Artifact App Icons
+function bindArtifactButtons() {
+  const buttons = document.querySelectorAll('[data-artifact-id]');
+  buttons.forEach(btn => {
+    const artifactId = btn.getAttribute('data-artifact-id');
+    if (!artifactId) return;
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openArtifactWheel(artifactId, e);
+    });
+
+    btn.addEventListener('touchend', (e) => {
+      if (!hasMoved) {
+        e.stopPropagation();
+        e.preventDefault();
+        openArtifactWheel(artifactId, e);
+      }
+    }, { passive: false });
+  });
+}
+
+// Expose globally to window object
+window.openArtifactWheel = openArtifactWheel;
+window.closeArtifactWheel = closeArtifactWheel;
+window.executeWheelAction = executeWheelAction;
+window.openArtifactInfoModal = openArtifactInfoModal;
+window.closeArtifactInfoModal = closeArtifactInfoModal;
+window.executeInfoModalAction = executeInfoModalAction;
+window.updateWheelHUD = updateWheelHUD;
+window.resetWheelHUD = resetWheelHUD;
+
 // Initialization
 function init() {
   drawFrame(1);
   updateTextDrum(0);
   updateTopBar(0);
   renderLoop();
+  bindArtifactButtons();
 
   // Trigger bubble entrance and ambient particle scheduler
   setTimeout(() => {

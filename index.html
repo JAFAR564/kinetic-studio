@@ -460,7 +460,8 @@
       transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.28s ease;
     }
 
-    #artifact-wheel-modal.wheel-active {
+    #artifact-wheel-modal.wheel-active,
+    #artifact-wheel-modal.opacity-100 {
       opacity: 1 !important;
       pointer-events: auto !important;
     }
@@ -490,9 +491,10 @@
       }
     }
 
-    #artifact-wheel-modal.wheel-active .action-wheel-disc {
-      transform: scale(1) rotate(0deg);
-      opacity: 1;
+    #artifact-wheel-modal.wheel-active .action-wheel-disc,
+    #artifact-wheel-modal.opacity-100 .action-wheel-disc {
+      transform: scale(1) rotate(0deg) !important;
+      opacity: 1 !important;
     }
 
     /* Calibrated perimeter laser ticks */
@@ -797,19 +799,19 @@
               <div class="grid grid-cols-4 gap-2 sm:gap-3.5 items-start">
                 
                 <!-- Icon 01: Remainder Portal -->
-                <button type="button" onclick="openArtifactWheel('remainder', event)" class="flex flex-col items-center group focus:outline-none text-center" style="--icon-color: #CCFF00; --icon-glow: rgba(204, 255, 0, 0.45);" title="Remainder Portal (RPG OS)">
-                  <div class="app-icon-squircle">
-                    <div class="app-icon-glare"></div>
-                    <span class="app-icon-badge bg-acid/20 border-acid/50 text-acid">RPG</span>
+                <button type="button" data-artifact-id="remainder" onclick="openArtifactWheel('remainder', event)" class="app-icon-btn flex flex-col items-center group focus:outline-none text-center cursor-pointer pointer-events-auto select-none" style="--icon-color: #CCFF00; --icon-glow: rgba(204, 255, 0, 0.45); pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;" title="Remainder Portal (RPG OS)">
+                  <div class="app-icon-squircle" style="pointer-events: auto; touch-action: manipulation;">
+                    <div class="app-icon-glare pointer-events-none"></div>
+                    <span class="app-icon-badge bg-acid/20 border-acid/50 text-acid pointer-events-none">RPG</span>
                     <!-- Cybernetic Portal Hexagon Glyph -->
-                    <svg class="w-8 h-8 sm:w-9 sm:h-9 text-acid fill-none stroke-current" viewBox="0 0 32 32">
+                    <svg class="w-8 h-8 sm:w-9 sm:h-9 text-acid fill-none stroke-current pointer-events-none" viewBox="0 0 32 32">
                       <polygon points="16,3 28,10 28,22 16,29 4,22 4,10" stroke-width="1.6" stroke-linejoin="round" class="opacity-85"/>
                       <circle cx="16" cy="16" r="6" stroke-width="1.4" stroke-dasharray="3 2" class="animate-spin" style="animation-duration: 12s;"/>
                       <polygon points="16,11 20,16 16,21 12,16" fill="#CCFF00" fill-opacity="0.6"/>
                     </svg>
                   </div>
                   <!-- Label Beneath Icon -->
-                  <div class="mt-2 w-full px-0.5">
+                  <div class="mt-2 w-full px-0.5 pointer-events-none">
                     <div class="font-sans font-bold text-white text-[11px] sm:text-xs tracking-tight group-hover:text-acid transition-colors truncate">
                       REMAINDER
                     </div>
@@ -820,12 +822,12 @@
                 </button>
 
                 <!-- Icon 02: Kinetic // 01 Synthesizer -->
-                <button type="button" onclick="openArtifactWheel('kinetic01', event)" class="flex flex-col items-center group focus:outline-none text-center" style="--icon-color: #0055FF; --icon-glow: rgba(0, 85, 255, 0.55);" title="Kinetic // 01 Cyber-Physical Hardware Twin">
-                  <div class="app-icon-squircle">
-                    <div class="app-icon-glare"></div>
-                    <span class="app-icon-badge bg-cobalt/25 border-cobalt/50 text-blue-300">DSP</span>
+                <button type="button" data-artifact-id="kinetic01" onclick="openArtifactWheel('kinetic01', event)" class="app-icon-btn flex flex-col items-center group focus:outline-none text-center cursor-pointer pointer-events-auto select-none" style="--icon-color: #0055FF; --icon-glow: rgba(0, 85, 255, 0.55); pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;" title="Kinetic // 01 Cyber-Physical Hardware Twin">
+                  <div class="app-icon-squircle" style="pointer-events: auto; touch-action: manipulation;">
+                    <div class="app-icon-glare pointer-events-none"></div>
+                    <span class="app-icon-badge bg-cobalt/25 border-cobalt/50 text-blue-300 pointer-events-none">DSP</span>
                     <!-- Rotary Dial & Oscilloscope Waveform Glyph -->
-                    <svg class="w-8 h-8 sm:w-9 sm:h-9 text-blue-400 fill-none" viewBox="0 0 32 32">
+                    <svg class="w-8 h-8 sm:w-9 sm:h-9 text-blue-400 fill-none pointer-events-none" viewBox="0 0 32 32">
                       <circle cx="16" cy="16" r="12" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-dasharray="2 3"/>
                       <circle cx="16" cy="16" r="9" stroke="url(#kinetic-glyph-grad)" stroke-width="2"/>
                       <path d="M7 16h3l2-5 3 10 3-8 2 5 2-2h3" stroke="#CCFF00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -838,7 +840,7 @@
                     </svg>
                   </div>
                   <!-- Label Beneath Icon -->
-                  <div class="mt-2 w-full px-0.5">
+                  <div class="mt-2 w-full px-0.5 pointer-events-none">
                     <div class="font-sans font-bold text-white text-[11px] sm:text-xs tracking-tight group-hover:text-acid transition-colors truncate">
                       KINETIC // 01
                     </div>
@@ -849,12 +851,12 @@
                 </button>
 
                 <!-- Icon 03: Copper Haven 3D Flagship -->
-                <button type="button" onclick="openArtifactWheel('copperhaven', event)" class="flex flex-col items-center group focus:outline-none text-center" style="--icon-color: #f59e0b; --icon-glow: rgba(245, 158, 11, 0.45);" title="Copper Haven 3D Commerce Flagship">
-                  <div class="app-icon-squircle">
-                    <div class="app-icon-glare"></div>
-                    <span class="app-icon-badge bg-amber-500/20 border-amber-500/50 text-amber-300">3D</span>
+                <button type="button" data-artifact-id="copperhaven" onclick="openArtifactWheel('copperhaven', event)" class="app-icon-btn flex flex-col items-center group focus:outline-none text-center cursor-pointer pointer-events-auto select-none" style="--icon-color: #f59e0b; --icon-glow: rgba(245, 158, 11, 0.45); pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;" title="Copper Haven 3D Commerce Flagship">
+                  <div class="app-icon-squircle" style="pointer-events: auto; touch-action: manipulation;">
+                    <div class="app-icon-glare pointer-events-none"></div>
+                    <span class="app-icon-badge bg-amber-500/20 border-amber-500/50 text-amber-300 pointer-events-none">3D</span>
                     <!-- 3D Isometric Faceted Prism Glyph -->
-                    <svg class="w-8 h-8 sm:w-9 sm:h-9 text-amber-400 fill-none" viewBox="0 0 32 32">
+                    <svg class="w-8 h-8 sm:w-9 sm:h-9 text-amber-400 fill-none pointer-events-none" viewBox="0 0 32 32">
                       <path d="M16 4L27 10.5V21.5L16 28L5 21.5V10.5L16 4Z" stroke="rgba(255,255,255,0.3)" stroke-width="1.4"/>
                       <path d="M16 4L27 10.5L16 17L5 10.5L16 4Z" fill="#f59e0b" fill-opacity="0.35" stroke="#f59e0b" stroke-width="1.2"/>
                       <path d="M16 17V28L27 21.5V10.5L16 17Z" fill="#b45309" fill-opacity="0.45" stroke="#f59e0b" stroke-width="1.2"/>
@@ -862,7 +864,7 @@
                     </svg>
                   </div>
                   <!-- Label Beneath Icon -->
-                  <div class="mt-2 w-full px-0.5">
+                  <div class="mt-2 w-full px-0.5 pointer-events-none">
                     <div class="font-sans font-bold text-white text-[11px] sm:text-xs tracking-tight group-hover:text-acid transition-colors truncate">
                       COPPER HAVEN
                     </div>
@@ -873,12 +875,12 @@
                 </button>
 
                 <!-- Icon 04: Neural Core AI Pipeline -->
-                <button type="button" onclick="openArtifactWheel('neuralcore', event)" class="flex flex-col items-center group focus:outline-none text-center" style="--icon-color: #06b6d4; --icon-glow: rgba(6, 182, 212, 0.45);" title="Neural Core Bespoke AI Engine">
-                  <div class="app-icon-squircle">
-                    <div class="app-icon-glare"></div>
-                    <span class="app-icon-badge bg-cyan-500/20 border-cyan-500/50 text-cyan-300">AI</span>
+                <button type="button" data-artifact-id="neuralcore" onclick="openArtifactWheel('neuralcore', event)" class="app-icon-btn flex flex-col items-center group focus:outline-none text-center cursor-pointer pointer-events-auto select-none" style="--icon-color: #06b6d4; --icon-glow: rgba(6, 182, 212, 0.45); pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;" title="Neural Core Bespoke AI Engine">
+                  <div class="app-icon-squircle" style="pointer-events: auto; touch-action: manipulation;">
+                    <div class="app-icon-glare pointer-events-none"></div>
+                    <span class="app-icon-badge bg-cyan-500/20 border-cyan-500/50 text-cyan-300 pointer-events-none">AI</span>
                     <!-- Neural Tensor Synapse Glyph -->
-                    <svg class="w-8 h-8 sm:w-9 sm:h-9 text-cyan-400 fill-none" viewBox="0 0 32 32">
+                    <svg class="w-8 h-8 sm:w-9 sm:h-9 text-cyan-400 fill-none pointer-events-none" viewBox="0 0 32 32">
                       <circle cx="8" cy="10" r="3" fill="#06b6d4" stroke="#ffffff" stroke-width="1"/>
                       <circle cx="8" cy="22" r="3" fill="#06b6d4" stroke="#ffffff" stroke-width="1"/>
                       <circle cx="16" cy="16" r="3.5" fill="#22d3ee" stroke="#ffffff" stroke-width="1.2"/>
@@ -891,7 +893,7 @@
                     </svg>
                   </div>
                   <!-- Label Beneath Icon -->
-                  <div class="mt-2 w-full px-0.5">
+                  <div class="mt-2 w-full px-0.5 pointer-events-none">
                     <div class="font-sans font-bold text-white text-[11px] sm:text-xs tracking-tight group-hover:text-acid transition-colors truncate">
                       NEURAL CORE
                     </div>
@@ -1475,6 +1477,6 @@
   </aside>
 
   <!-- JAVASCRIPT ENGINE -->
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>
