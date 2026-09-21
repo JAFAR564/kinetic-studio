@@ -3,7 +3,7 @@ import socketserver
 import os
 import sys
 
-DIRECTORY = "/data/data/com.termux/files/home/KineticStudio"
+DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 PORT = 5050
 
 class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -21,6 +21,7 @@ def run():
     socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("", PORT), NoCacheHTTPRequestHandler) as httpd:
         print(f"Serving {DIRECTORY} on port {PORT} with strict NO-CACHE headers...")
+        print(f"Local URL: http://localhost:{PORT}")
         httpd.serve_forever()
 
 if __name__ == "__main__":
